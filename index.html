@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#be185d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tasty Ads" />
+  <title>Tasty Pastries · App Publicidad</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23be185d'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3ETP%3C/text%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23be185d'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3ETP%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #fdf8fa;
+      --card: #ffffff;
+      --primary: #be185d;
+      --primary-light: #fce7f3;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #f3e8ee;
+      --green: #059669;
+      --green-bg: #d1fae5;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 84px; -webkit-tap-highlight-color: transparent; }
+    header {
+      background: linear-gradient(135deg, #be185d, #9d174d);
+      color: #fff;
+      padding: 18px 16px 20px;
+      border-bottom-left-radius: 22px;
+      border-bottom-right-radius: 22px;
+      box-shadow: 0 4px 14px rgba(190, 24, 93, 0.2);
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+    header p { font-size: 0.78rem; opacity: 0.92; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .sync-pill {
+      background: rgba(255,255,255,0.22); border: none; color: #fff;
+      padding: 5px 10px; border-radius: 99px; font-size: 0.74rem; font-weight: 700; cursor: pointer;
+    }
+    .container { max-width: 540px; margin: 0 auto; padding: 14px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .card-title { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 13px; }
+    .kpi.full { grid-column: span 2; background: linear-gradient(135deg, #fff1f5, #ffffff); border-color: #fbcfe8; }
+    .kpi label { font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 4px; }
+    .kpi .val { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+    .kpi.full .val { font-size: 1.7rem; color: var(--primary); }
+    .kpi small { font-size: 0.72rem; color: var(--muted); }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .badge-green { background: var(--green-bg); color: var(--green); }
+    .badge-red { background: var(--red-bg); color: var(--red); }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+    .form-group { margin-bottom: 11px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+    input, select {
+      width: 100%; padding: 10px 11px; border: 1px solid #e5e7eb; border-radius: 10px;
+      font-size: 0.92rem; background: #fff; color: var(--text);
+    }
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
+    .checkbox-row { display: flex; align-items: center; gap: 10px; background: var(--primary-light); padding: 10px 12px; border-radius: 10px; margin-bottom: 4px; }
+    .checkbox-row input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .checkbox-row span { font-size: 0.84rem; font-weight: 600; color: #831843; }
+    .btn {
+      width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.95rem;
+      font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-secondary { background: var(--primary-light); color: var(--primary); margin-bottom: 10px; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-excel { background: #166534; color: #fff; margin-bottom: 8px; }
+    .btn-sm { padding: 9px 12px; font-size: 0.84rem; border-radius: 10px; }
+    .order-item {
+      border: 1px dashed #f9a8d4; background: #fff9fb; border-radius: 12px;
+      padding: 12px; margin-bottom: 10px;
+    }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; font-weight: 700; color: var(--primary); }
+    .remove-btn { background: var(--red-bg); color: var(--red); border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .mini-label { font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 2px; font-weight: 600; }
+    .live-summary {
+      background: #f9fafb; border-radius: 12px; padding: 11px; margin-bottom: 12px;
+      display: flex; justify-content: space-around; text-align: center; border: 1px solid #e5e7eb;
+    }
+    .live-summary div span { display: block; font-size: 0.7rem; color: var(--muted); }
+    .live-summary div strong { font-size: 0.95rem; color: var(--text); }
+    .chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding-top: 16px; border-bottom: 1px solid #e5e7eb; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+    .bar-pair { display: flex; gap: 3px; align-items: flex-end; width: 100%; justify-content: center; height: 95px; }
+    .bar { width: 10px; border-radius: 4px 4px 0 0; min-height: 3px; }
+    .bar.spend { background: #f43f5e; }
+    .bar.rev { background: #10b981; }
+    .bar-label { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+    .legend { display: flex; gap: 14px; font-size: 0.75rem; color: var(--muted); margin-top: 8px; justify-content: center; }
+    .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
+    .legend .l-spend::before { background: #f43f5e; }
+    .legend .l-rev::before { background: #10b981; }
+    .history-item { border-bottom: 1px solid var(--border); padding: 12px 0; }
+    .history-item:last-child { border-bottom: none; }
+    .history-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .history-orders { margin-top: 8px; padding-left: 10px; border-left: 2px solid #fbcfe8; font-size: 0.82rem; }
+    .history-orders li { list-style: none; margin-bottom: 4px; color: #374151; }
+    nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+      padding: 8px 4px 12px; z-index: 50; box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+    }
+    nav button {
+      background: none; border: none; color: var(--muted); font-size: 0.72rem;
+      font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; flex: 1;
+    }
+    nav button.active { color: var(--primary); }
+    nav button span.icon { font-size: 1.25rem; }
+    .toast {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      background: #111827; color: #fff; padding: 10px 18px; border-radius: 999px;
+      font-size: 0.85rem; font-weight: 600; z-index: 100; display: none; text-align: center;
+    }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none;
+      align-items: center; justify-content: center; padding: 16px; z-index: 90;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 18px; padding: 18px; width: 100%; max-width: 440px; }
+  </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- MODAL CONFIGURACIÓN SHEETS -->
+<div id="config-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="card-title">Conexión con pestaña "App_Publicidad"</div>
+    <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">
+      Tu URL de Apps Script ya está configurada por defecto. Solo modifícala si creas una nueva implementación.
+    </p>
+    <div class="form-group">
+      <label>URL Web App (Apps Script)</label>
+      <input type="url" id="script-url-input" />
+    </div>
+    <div class="form-group">
+      <label>Tasa BCV Referencia (se lee automática desde Factura!C1)</label>
+      <input type="number" id="bcv-input" step="0.01" placeholder="Ej: 875.00" />
+    </div>
+    <div class="row-2">
+      <button type="button" class="btn btn-secondary" style="margin:0;" onclick="closeConfig()">Cerrar</button>
+      <button type="button" class="btn btn-primary" onclick="saveConfig()">Guardar y Probar</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <h1>
+    <span>Tasty Pastries · Ads</span>
+    <button type="button" class="sync-pill" id="sync-status-btn" onclick="openConfig()">🟢 Sheets Activo</button>
+  </h1>
+  <p>
+    <span>Pestaña: App_Publicidad</span>
+    <span id="bcv-badge">BCV: Conectando...</span>
+  </p>
+</header>
+
+<div class="container">
+  <!-- VISTA 1: INICIO -->
+  <section id="view-home" class="view active">
+    <div id="pending-sync-banner" class="card" style="display:none; background:#fffbeb; border-color:#fde68a;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <span style="font-size:0.8rem; color:#92400e; font-weight:600;" id="pending-sync-text">1 registro pendiente por enviar</span>
+        <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="flushPendingQueue()">Reenviar</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi full">
+        <label>Saldo Deuda Cuenta Publicitaria</label>
+        <div class="val" id="kpi-debt">$0.00</div>
+        <small>Columna Saldo_Deuda_USD en App_Publicidad</small>
+      </div>
+      <div class="kpi">
+        <label>Gasto del Mes</label>
+        <div class="val" id="kpi-spend">$0.00</div>
+        <small id="kpi-days">0 días · 0 contactos</small>
+      </div>
+      <div class="kpi">
+        <label>Pedidos Obtenidos</label>
+        <div class="val" id="kpi-orders">0</div>
+        <small id="kpi-rev">$0.00 en ventas</small>
+      </div>
+      <div class="kpi">
+        <label>Costo por Pedido (CPA)</label>
+        <div class="val" id="kpi-cpa">$0.00</div>
+        <small id="kpi-cpl">Costo/contacto: $0.00</small>
+      </div>
+      <div class="kpi">
+        <label>Retorno (ROAS)</label>
+        <div class="val" id="kpi-roas">0.0x</div>
+        <small>Ventas / Gasto Ads</small>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Últimos 7 días: Gasto vs. Ventas ($)</div>
+      <div id="chart-container" class="chart-bars"></div>
+      <div class="legend">
+        <span class="l-spend">Gasto Publicidad</span>
+        <span class="l-rev">Ventas Pedidos</span>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-excel" onclick="exportExcel()">📊 Descargar Excel (.xlsx) App_Publicidad</button>
+  </section>
+
+  <!-- VISTA 2: REGISTRAR DÍA -->
+  <section id="view-add" class="view">
+    <div class="card">
+      <div class="card-title">1. Métricas Publicitarias del Día</div>
+      <div class="row-3">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="reg-date" />
+        </div>
+        <div class="form-group">
+          <label>Gasto ($)</label>
+          <input type="number" id="reg-spend" step="0.01" min="0" placeholder="0.00" oninput="updateLiveSummary()" />
+        </div>
+        <div class="form-group">
+          <label>Contactos</label>
+          <input type="number" id="reg-contacts" min="0" placeholder="0" oninput="updateLiveSummary()" />
+        </div>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="reg-add-debt" checked />
+        <span>Sumar este gasto al saldo de deuda Meta Ads</span>
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2. Productos Vendidos Hoy (Sin datos de cliente)</div>
+      <div id="orders-list"></div>
+      <button type="button" class="btn btn-secondary" onclick="addOrderRow()">+ Agregar Producto Vendido</button>
+
+      <div class="live-summary">
+        <div><span>Contactos</span><strong id="live-contacts">0</strong></div>
+        <div><span>Pedidos</span><strong id="live-count">0</strong></div>
+        <div><span>Ventas</span><strong id="live-sales">$0.00</strong></div>
+        <div><span>CPA Hoy</span><strong id="live-cpa">$0.00</strong></div>
+      </div>
+
+      <button type="button" class="btn btn-primary" id="save-day-btn" onclick="saveDailyRecord()">Guardar en App_Publicidad</button>
+    </div>
+  </section>
+
+  <!-- VISTA 3: DEUDA META ADS -->
+  <section id="view-debt" class="view">
+    <div class="kpi full" style="margin-bottom:12px;">
+      <label>Saldo Pendiente en Meta Ads</label>
+      <div class="val" id="debt-view-balance">$0.00</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Registrar Abono o Saldo Inicial</div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="pay-date" />
+        </div>
+        <div class="form-group">
+          <label>Monto ($ USD)</label>
+          <input type="number" id="pay-amount" step="0.01" min="0" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Movimiento</label>
+        <select id="pay-type">
+          <option value="payment">Abono / Pago a Meta (-)</option>
+          <option value="charge">Saldo Anterior / Cargo (+)</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-green" onclick="registerDebtMovement()">Registrar y Actualizar Saldo</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Historial de Cargos y Abonos</div>
+      <div id="debt-ledger"></div>
+    </div>
+  </section>
+
+  <!-- VISTA 4: HISTORIAL -->
+  <section id="view-history" class="view">
+    <div class="card">
+      <div class="row-2" style="margin-bottom:10px;">
+        <input type="text" id="search-input" placeholder="Buscar producto..." oninput="renderHistory()" />
+        <input type="month" id="filter-month" onchange="renderHistory()" />
+      </div>
+      <button type="button" class="btn btn-excel btn-sm" onclick="exportExcel()">📊 Descargar Excel (.xlsx) Local</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Registros Guardados</div>
+      <div id="history-list"></div>
+    </div>
+  </section>
+</div>
+
+<nav>
+  <button class="active" onclick="switchView('home', this)"><span class="icon">📊</span>Inicio</button>
+  <button onclick="switchView('add', this)"><span class="icon">➕</span>Registrar</button>
+  <button onclick="switchView('debt', this)"><span class="icon">💳</span>Deuda</button>
+  <button onclick="switchView('history', this)"><span class="icon">📋</span>Historial</button>
+</nav>
+
+<script>
+  const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVF7eiXs8IUtcUPhA82gsOaqnU8yVlr8nKrYcD4RUEjCVNjQhA1mQIEXBp3r2Mz9y6xw/exec';
+  const STORAGE_KEY = 'tasty_app_publicidad_v1';
+  const CONFIG_KEY = 'tasty_app_publicidad_cfg_v1';
+
+  const CATALOG = [
+    { name: 'Ponqué de Limón 800 grs', price: 24 },
+    { name: 'Ponqué de Naranja 800 grs', price: 20 },
+    { name: 'Ponqué de Chocolate 800 grs', price: 24 },
+    { name: 'Ponqué Marmoleado 800 grs', price: 24 },
+    { name: 'Ponqué de Zanahoria 800 grs', price: 27 },
+    { name: 'Ponqué de Auyama 800 grs', price: 26 },
+    { name: 'Ponqué de parchita 800 grs', price: 24 },
+    { name: 'Ponqué de Batata 800 grs', price: 24 },
+    { name: 'Ponqué Cuatro Delicias 800 grs', price: 26 },
+    { name: 'Apple Coffee Cake  800 grs', price: 30 },
+    { name: 'Cinnamon Coffee Cake 800 grs', price: 22 },
+    { name: 'Blackberry Coffee Cake 800 grs', price: 26 },
+    { name: 'Choco Chispas 800 grs', price: 26 },
+    { name: 'Quesillo sin azucar 300 grs', price: 15 },
+    { name: 'Brownie chocolate y nueces', price: 20 },
+    { name: 'Ponqué de Limón 800 keto', price: 32 },
+    { name: 'Ponqué de Chocolate keto 800', price: 32 },
+    { name: 'Apple Coffee Cake keto', price: 38 },
+    { name: 'Otro Producto', price: 0 }
+  ];
+
+  let savedCfg = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {};
+  let config = {
+    scriptUrl: savedCfg.scriptUrl || DEFAULT_SCRIPT_URL,
+    bcv: savedCfg.bcv || 0
+  };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+
+  let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { records: [], ledger: [], pendingQueue: [] };
+  if (!state.pendingQueue) state.pendingQueue = [];
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    renderAll();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 2800);
+  }
+
+  function todayStr() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function formatDateVE(iso) {
+    if (!iso || !iso.includes('-')) return iso;
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function openConfig() {
+    document.getElementById('script-url-input').value = config.scriptUrl || DEFAULT_SCRIPT_URL;
+    document.getElementById('bcv-input').value = config.bcv || '';
+    document.getElementById('config-modal').classList.add('open');
+  }
+
+  function closeConfig() {
+    document.getElementById('config-modal').classList.remove('open');
+  }
+
+  async function saveConfig() {
+    config.scriptUrl = document.getElementById('script-url-input').value.trim() || DEFAULT_SCRIPT_URL;
+    config.bcv = parseFloat(document.getElementById('bcv-input').value) || 0;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    updateHeaderStatus();
+    closeConfig();
+
+    await fetchSheetInfo();
+    await flushPendingQueue();
+  }
+
+  async function fetchSheetInfo() {
+    if (!config.scriptUrl) return;
+    try {
+      const res = await fetch(config.scriptUrl);
+      const json = await res.json();
+      if (json.ok) {
+        if (json.bcv > 0) {
+          config.bcv = json.bcv;
+          localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+        }
+        if (state.ledger.length === 0 && typeof json.ultimoSaldo === 'number' && json.ultimoSaldo !== 0) {
+          state.ledger.push({
+            id: 'init_sheets',
+            date: todayStr(),
+            type: json.ultimoSaldo > 0 ? 'charge' : 'payment',
+            amount: Math.abs(json.ultimoSaldo),
+            note: 'Saldo sincronizado desde App_Publicidad'
+          });
+          saveState();
+        }
+        updateHeaderStatus();
+      }
+    } catch (e) {
+      document.getElementById('bcv-badge').textContent = config.bcv > 0 ? `BCV: Bs ${config.bcv}` : 'BCV: Sin red';
+    }
+  }
+
+  function updateHeaderStatus() {
+    const btn = document.getElementById('sync-status-btn');
+    btn.textContent = config.scriptUrl ? '🟢 Sheets Activo' : '⚙️ Conectar Sheets';
+    document.getElementById('bcv-badge').textContent = config.bcv > 0 ? `BCV: Bs ${config.bcv}` : 'BCV: Auto';
+  }
+
+  async function sendPayloadToSheets(payload) {
+    if (!config.scriptUrl) return false;
+    try {
+      const res = await fetch(config.scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.ok && json.bcvUsed > 0) {
+        config.bcv = json.bcvUsed;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+        updateHeaderStatus();
+      }
+      return !!json.ok;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async function flushPendingQueue() {
+    if (!config.scriptUrl || state.pendingQueue.length === 0) return;
+    const remaining = [];
+    let sentCount = 0;
+    for (const item of state.pendingQueue) {
+      const ok = await sendPayloadToSheets(item);
+      if (ok) sentCount++;
+      else remaining.push(item);
+    }
+    state.pendingQueue = remaining;
+    saveState();
+    if (sentCount > 0) showToast(`${sentCount} envío(s) sincronizados con App_Publicidad`);
+  }
+
+  function switchView(name, btn) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAll();
+  }
+
+  function onProductChange(selectEl) {
+    const row = selectEl.closest('.order-item');
+    const selected = CATALOG.find(c => c.name === selectEl.value);
+    if (selected && selected.price > 0) {
+      row.querySelector('.o-unit').value = selected.price;
+    }
+    recalcRow(row);
+  }
+
+  function recalcRow(row) {
+    const qty = parseFloat(row.querySelector('.o-qty').value) || 0;
+    const unit = parseFloat(row.querySelector('.o-unit').value) || 0;
+    row.querySelector('.o-total').value = (qty * unit).toFixed(2);
+    updateLiveSummary();
+  }
+
+  function addOrderRow() {
+    const container = document.getElementById('orders-list');
+    const idx = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'order-item';
+    const options = CATALOG.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    const defaultPrice = CATALOG[0].price;
+
+    div.innerHTML = `
+      <div class="order-header">
+        <span>Pedido #${idx}</span>
+        <button type="button" class="remove-btn" onclick="this.closest('.order-item').remove(); updateLiveSummary();">Quitar</button>
+      </div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <span class="mini-label">Producto</span>
+        <select class="o-product" onchange="onProductChange(this)">${options}</select>
+      </div>
+      <div class="row-3">
+        <div>
+          <span class="mini-label">Cantidad</span>
+          <input type="number" class="o-qty" min="1" value="1" oninput="recalcRow(this.closest('.order-item'))" />
+        </div>
+        <div>
+          <span class="mini-label">Precio Unit. ($)</span>
+          <input type="number" class="o-unit" step="0.01" min="0" value="${defaultPrice}" oninput="recalcRow(this.closest('.order-item'))" />
+        </div>
+        <div>
+          <span class="mini-label">Total ($)</span>
+          <input type="number" class="o-total" step="0.01" min="0" value="${defaultPrice.toFixed(2)}" oninput="updateLiveSummary()" />
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+    updateLiveSummary();
+  }
+
+  function updateLiveSummary() {
+    const spend = parseFloat(document.getElementById('reg-spend').value) || 0;
+    const contacts = parseInt(document.getElementById('reg-contacts').value) || 0;
+    const items = document.querySelectorAll('#orders-list .order-item');
+    let sales = 0;
+    items.forEach(el => {
+      sales += parseFloat(el.querySelector('.o-total').value) || 0;
+    });
+    const count = items.length;
+    const cpa = count > 0 ? (spend / count) : 0;
+    document.getElementById('live-contacts').textContent = contacts;
+    document.getElementById('live-count').textContent = count;
+    document.getElementById('live-sales').textContent = '$' + sales.toFixed(2);
+    document.getElementById('live-cpa').textContent = '$' + cpa.toFixed(2);
+  }
+
+  function getDebtBalance() {
+    return state.ledger.reduce((acc, item) => {
+      return item.type === 'charge' ? acc + item.amount : acc - item.amount;
+    }, 0);
+  }
+
+  async function saveDailyRecord() {
+    const date = document.getElementById('reg-date').value || todayStr();
+    const spend = parseFloat(document.getElementById('reg-spend').value) || 0;
+    const contacts = parseInt(document.getElementById('reg-contacts').value) || 0;
+    const addDebt = document.getElementById('reg-add-debt').checked;
+
+    const orders = [];
+    document.querySelectorAll('#orders-list .order-item').forEach(el => {
+      const product = el.querySelector('.o-product').value;
+      const qty = parseInt(el.querySelector('.o-qty').value) || 1;
+      const unitPrice = parseFloat(el.querySelector('.o-unit').value) || 0;
+      const total = parseFloat(el.querySelector('.o-total').value) || 0;
+      orders.push({ product, qty, unitPrice, total });
+    });
+
+    if (spend === 0 && contacts === 0 && orders.length === 0) {
+      showToast('Ingresa el gasto, contactos o al menos 1 producto');
+      return;
+    }
+
+    const btn = document.getElementById('save-day-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando en App_Publicidad...';
+
+    const id = Date.now().toString();
+    state.records.unshift({ id, date, spend, contacts, orders, synced: false });
+
+    if (addDebt && spend > 0) {
+      state.ledger.unshift({
+        id: 'c_' + id,
+        date,
+        type: 'charge',
+        amount: spend,
+        note: `Gasto Diario (${orders.length} pedidos · ${contacts} contactos)`
+      });
+    }
+
+    const newSaldo = +getDebtBalance().toFixed(2);
+    const payload = {
+      action: 'app_publicidad_day',
+      fecha: formatDateVE(date),
+      gasto: spend,
+      contactos: contacts,
+      pedidosCount: orders.length,
+      saldo: newSaldo,
+      bcv: config.bcv || 0,
+      orders: orders
+    };
+
+    const synced = await sendPayloadToSheets(payload);
+    if (synced) {
+      state.records[0].synced = true;
+      showToast('Guardado en pestaña App_Publicidad');
+    } else {
+      state.pendingQueue.push(payload);
+      showToast('Guardado local (sin conexión, quedó en cola)');
+    }
+
+    document.getElementById('reg-spend').value = '';
+    document.getElementById('reg-contacts').value = '';
+    document.getElementById('orders-list').innerHTML = '';
+    updateLiveSummary();
+    btn.disabled = false;
+    btn.textContent = 'Guardar en App_Publicidad';
+    saveState();
+  }
+
+  async function registerDebtMovement() {
+    const date = document.getElementById('pay-date').value || todayStr();
+    const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
+    const type = document.getElementById('pay-type').value;
+
+    if (amount <= 0) {
+      showToast('Ingresa un monto válido');
+      return;
+    }
+
+    state.ledger.unshift({
+      id: (type === 'payment' ? 'p_' : 'm_') + Date.now(),
+      date,
+      type,
+      amount,
+      note: type === 'payment' ? 'Abono Deuda' : 'Saldo Inicial / Cargo'
+    });
+
+    const newSaldo = +getDebtBalance().toFixed(2);
+    const payload = {
+      action: 'app_publicidad_debt',
+      fecha: formatDateVE(date),
+      tipoMovimiento: type === 'payment' ? 'Abono Deuda' : 'Cargo Inicial',
+      gasto: type === 'charge' ? amount : 0,
+      abono: type === 'payment' ? amount : 0,
+      saldo: newSaldo
+    };
+
+    const synced = await sendPayloadToSheets(payload);
+    if (!synced) state.pendingQueue.push(payload);
+
+    document.getElementById('pay-amount').value = '';
+    saveState();
+    showToast(synced ? 'Saldo actualizado en App_Publicidad' : 'Movimiento guardado localmente');
+  }
+
+  function deleteRecord(id) {
+    if (!confirm('¿Eliminar este registro de la app local?')) return;
+    state.records = state.records.filter(r => r.id !== id);
+    state.ledger = state.ledger.filter(l => l.id !== 'c_' + id);
+    saveState();
+    showToast('Registro eliminado');
+  }
+
+  function renderDashboard() {
+    const debt = getDebtBalance();
+    document.getElementById('kpi-debt').textContent = '$' + debt.toFixed(2);
+    document.getElementById('debt-view-balance').textContent = '$' + debt.toFixed(2);
+
+    const banner = document.getElementById('pending-sync-banner');
+    if (state.pendingQueue.length > 0 && config.scriptUrl) {
+      banner.style.display = 'block';
+      document.getElementById('pending-sync-text').textContent = `${state.pendingQueue.length} registro(s) pendientes por enviar`;
+    } else {
+      banner.style.display = 'none';
+    }
+
+    const currentMonth = todayStr().slice(0, 7);
+    const monthRecords = state.records.filter(r => r.date.startsWith(currentMonth));
+    let totalSpend = 0, totalContacts = 0, totalOrders = 0, totalRev = 0;
+
+    monthRecords.forEach(r => {
+      totalSpend += r.spend;
+      totalContacts += (r.contacts || 0);
+      totalOrders += r.orders.length;
+      r.orders.forEach(o => totalRev += (o.total || 0));
+    });
+
+    const cpa = totalOrders > 0 ? totalSpend / totalOrders : 0;
+    const cpl = totalContacts > 0 ? totalSpend / totalContacts : 0;
+    const roas = totalSpend > 0 ? totalRev / totalSpend : 0;
+
+    document.getElementById('kpi-spend').textContent = '$' + totalSpend.toFixed(2);
+    document.getElementById('kpi-days').textContent = `${monthRecords.length} días · ${totalContacts} contactos`;
+    document.getElementById('kpi-orders').textContent = totalOrders;
+    document.getElementById('kpi-rev').textContent = `$${totalRev.toFixed(2)} en ventas`;
+    document.getElementById('kpi-cpa').textContent = '$' + cpa.toFixed(2);
+    document.getElementById('kpi-cpl').textContent = `Costo/contacto: $${cpl.toFixed(2)}`;
+    document.getElementById('kpi-roas').textContent = roas.toFixed(1) + 'x';
+
+    const recent = [...state.records].sort((a, b) => a.date.localeCompare(b.date)).slice(-7);
+    const chart = document.getElementById('chart-container');
+    if (recent.length === 0) {
+      chart.innerHTML = '<p style="font-size:0.8rem; color:var(--muted); margin:auto;">Aún no hay datos para graficar</p>';
+      return;
+    }
+    let maxVal = 10;
+    recent.forEach(r => {
+      const rev = r.orders.reduce((s, o) => s + (o.total || 0), 0);
+      if (r.spend > maxVal) maxVal = r.spend;
+      if (rev > maxVal) maxVal = rev;
+    });
+
+    chart.innerHTML = recent.map(r => {
+      const rev = r.orders.reduce((s, o) => s + (o.total || 0), 0);
+      const hSpend = Math.round((r.spend / maxVal) * 90);
+      const hRev = Math.round((rev / maxVal) * 90);
+      const label = r.date.slice(5);
+      return `
+        <div class="bar-col">
+          <div class="bar-pair">
+            <div class="bar spend" style="height:${hSpend}px"></div>
+            <div class="bar rev" style="height:${hRev}px"></div>
+          </div>
+          <div class="bar-label">${label}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderLedger() {
+    const el = document.getElementById('debt-ledger');
+    if (state.ledger.length === 0) {
+      el.innerHTML = '<p style="font-size:0.85rem; color:var(--muted);">Sin movimientos registrados.</p>';
+      return;
+    }
+    el.innerHTML = state.ledger.map(item => `
+      <div class="history-item" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="font-size:0.88rem;">${item.note}</strong>
+          <div style="font-size:0.75rem; color:var(--muted);">${formatDateVE(item.date)}</div>
+        </div>
+        <span class="badge ${item.type === 'charge' ? 'badge-red' : 'badge-green'}">
+          ${item.type === 'charge' ? '+' : '-'}$${item.amount.toFixed(2)}
+        </span>
+      </div>
+    `).join('');
+  }
+
+  function renderHistory() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const m = document.getElementById('filter-month').value;
+    const filtered = state.records.filter(r => {
+      if (m && !r.date.startsWith(m)) return false;
+      if (!q) return true;
+      return r.orders.some(o => o.product.toLowerCase().includes(q));
+    });
+
+    const el = document.getElementById('history-list');
+    if (filtered.length === 0) {
+      el.innerHTML = '<p style="font-size:0.85rem; color:var(--muted);">No se encontraron registros.</p>';
+      return;
+    }
+
+    el.innerHTML = filtered.map(r => {
+      const sales = r.orders.reduce((s, o) => s + (o.total || 0), 0);
+      const syncTag = r.synced
+        ? '<span class="badge badge-green">En Sheets</span>'
+        : '<span class="badge badge-amber">Local</span>';
+      const ordersHtml = r.orders.map(o => `
+        <li>• <strong>${o.qty || 1}x ${o.product}</strong> — $${(o.total || 0).toFixed(2)}</li>
+      `).join('');
+      return `
+        <div class="history-item">
+          <div class="history-top">
+            <div>
+              <strong>${formatDateVE(r.date)}</strong> ${syncTag} · <span style="font-size:0.8rem; color:var(--muted);">${r.contacts || 0} contactos</span>
+              <div style="font-size:0.8rem; margin-top:3px;">
+                Gasto: <strong style="color:var(--red);">$${r.spend.toFixed(2)}</strong> |
+                Pedidos: <strong>${r.orders.length}</strong> |
+                Ventas: <strong style="color:var(--green);">$${sales.toFixed(2)}</strong>
+              </div>
+            </div>
+            <button class="remove-btn" onclick="deleteRecord('${r.id}')">Borrar</button>
+          </div>
+          ${r.orders.length > 0 ? `<ul class="history-orders">${ordersHtml}</ul>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function exportExcel() {
+    if (state.records.length === 0 && state.ledger.length === 0) {
+      showToast('Aún no hay registros para exportar');
+      return;
+    }
+    if (typeof XLSX === 'undefined') {
+      showToast('Conéctate a internet para generar el archivo Excel');
+      return;
+    }
+
+    const rows = [];
+    const sortedLedger = [...state.ledger].sort((a, b) => a.date.localeCompare(b.date));
+    let runningSaldo = 0;
+    const saldoByDate = {};
+    sortedLedger.forEach(item => {
+      runningSaldo = item.type === 'charge'
+        ? +(runningSaldo + item.amount).toFixed(2)
+        : +(runningSaldo - item.amount).toFixed(2);
+      saldoByDate[item.date] = runningSaldo;
+    });
+
+    const tasa = config.bcv || 0;
+    [...state.records].sort((a, b) => a.date.localeCompare(b.date)).forEach(r => {
+      const f = formatDateVE(r.date);
+      const saldoDia = saldoByDate[r.date] !== undefined ? saldoByDate[r.date] : 0;
+
+      rows.push({
+        'Fecha': f,
+        'Tipo_Movimiento': 'Gasto Diario',
+        'Gasto_Ads_USD': +r.spend.toFixed(2),
+        'Contactos': r.contacts || 0,
+        'Cant_Pedidos_Dia': r.orders.length,
+        'Abono_Deuda_USD': 0,
+        'Saldo_Deuda_USD': saldoDia,
+        'Producto': '',
+        'Cantidad': '',
+        'Precio_Unit_USD': '',
+        'Total_Pedido_USD': '',
+        'Tasa_BCV': tasa,
+        'Total_Pedido_Bs': ''
+      });
+
+      r.orders.forEach(o => {
+        const qty = o.qty || 1;
+        const tot = +(o.total || 0).toFixed(2);
+        const unit = o.unitPrice !== undefined ? +o.unitPrice.toFixed(2) : +(tot / qty).toFixed(2);
+        rows.push({
+          'Fecha': f,
+          'Tipo_Movimiento': 'Pedido',
+          'Gasto_Ads_USD': 0,
+          'Contactos': 0,
+          'Cant_Pedidos_Dia': 0,
+          'Abono_Deuda_USD': 0,
+          'Saldo_Deuda_USD': saldoDia,
+          'Producto': o.product,
+          'Cantidad': qty,
+          'Precio_Unit_USD': unit,
+          'Total_Pedido_USD': tot,
+          'Tasa_BCV': tasa,
+          'Total_Pedido_Bs': tasa > 0 ? +(tot * tasa).toFixed(2) : 0
+        });
+      });
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'Fecha': '' }]);
+    XLSX.utils.book_append_sheet(wb, ws, 'App_Publicidad');
+    XLSX.writeFile(wb, `App_Publicidad_${todayStr()}.xlsx`);
+    showToast('Excel App_Publicidad descargado');
+  }
+
+  function renderAll() {
+    updateHeaderStatus();
+    renderDashboard();
+    renderLedger();
+    renderHistory();
+  }
+
+  document.getElementById('reg-date').value = todayStr();
+  document.getElementById('pay-date').value = todayStr();
+  renderAll();
+  fetchSheetInfo();
+  flushPendingQueue();
+</script>
+</body>
+</html>
